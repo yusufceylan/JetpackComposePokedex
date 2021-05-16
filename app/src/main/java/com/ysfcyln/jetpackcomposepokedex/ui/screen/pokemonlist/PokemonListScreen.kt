@@ -2,24 +2,41 @@ package com.ysfcyln.jetpackcomposepokedex.ui.screen.pokemonlist
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltNavGraphViewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.navigate
+import coil.request.ImageRequest
+import com.google.accompanist.coil.CoilImage
 import com.ysfcyln.jetpackcomposepokedex.R
+import com.ysfcyln.jetpackcomposepokedex.domain.entity.PokemonEntity
+import com.ysfcyln.jetpackcomposepokedex.ui.theme.RobotoCondensed
 
 @Composable
 fun PokemonListScreen(
@@ -94,5 +111,100 @@ fun SearchBar(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)
             )
         }
+    }
+}
+
+@Composable
+fun PokedexItem(
+    item : PokemonEntity,
+    navController: NavController,
+    modifier: Modifier = Modifier,
+    viewModel: PokemonListViewModel = hiltNavGraphViewModel()
+) {
+    val defaultDominantColor = MaterialTheme.colors.surface
+    var dominantColor by remember {
+        mutableStateOf(defaultDominantColor)
+    }
+
+    Box(
+        contentAlignment = Center,
+        modifier = Modifier
+            .shadow(5.dp, RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(10.dp))
+            .aspectRatio(1f)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        dominantColor, defaultDominantColor
+                    )
+                )
+            )
+            .clickable {
+                // Navigate to detail screen with data
+                navController.navigate(
+                    route = "pokemon_detail_screen/${dominantColor.toArgb()}/${item.pokemonName}"
+                )
+            }
+    ) {
+        Column {
+            // Load Image
+            CoilImage(request = ImageRequest.Builder(LocalContext.current)
+                .data(item.number)
+                .target {
+                    // Calculate dominant color
+                    viewModel.calcDominantColor(it) { color ->
+                        dominantColor = color
+                    }
+                }
+                .build(),
+                contentDescription = item.pokemonName,
+                fadeIn = true,
+                modifier = Modifier
+                    .size(120.dp)
+                    .align(CenterHorizontally)
+            ) {
+                // Show progress bar while loading
+                CircularProgressIndicator(
+                    color = MaterialTheme.colors.primary,
+                    modifier = Modifier.scale(0.5f)
+                )
+            }
+            // Add Text
+            Text(
+                text = item.pokemonName,
+                fontFamily = RobotoCondensed,
+                fontSize = 20.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+fun PokedexRow(
+    rowIndex: Int,
+    items: List<PokemonEntity>,
+    navController: NavController
+) {
+    Column {
+        Row {
+            PokedexItem(
+                item = items[rowIndex * 2],
+                navController = navController,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            if(items.size >= rowIndex * 2 + 2) {
+                PokedexItem(
+                    item = items[rowIndex * 2 + 1],
+                    navController = navController,
+                    modifier = Modifier.weight(1f)
+                )
+            } else {
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
