@@ -234,7 +234,10 @@ fun PokemonList(
         items (itemCount) {
             // Means scrolled to bottom
             if (it >= itemCount - 1 && !endReached && !isLoading && !isSearching) {
-                viewModel.loadPokemonPaginated()
+                // For handle possible side effect
+                LaunchedEffect(key1 = true) {
+                    viewModel.loadPokemonPaginated()
+                }
             }
             PokedexRow(rowIndex = it, items = pokemonList, navController = navController)
         }
