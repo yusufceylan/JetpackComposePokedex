@@ -1,10 +1,12 @@
 package com.ysfcyln.jetpackcomposepokedex.ui.screen.pokemonlist
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.GridCells
+import androidx.compose.foundation.lazy.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -185,35 +187,8 @@ fun PokedexItem(
     }
 }
 
-@Composable
-fun PokedexRow(
-    rowIndex: Int,
-    items: List<PokemonEntity>,
-    navController: NavController
-) {
-    Column {
-        Row {
-            PokedexItem(
-                item = items[rowIndex * 2],
-                navController = navController,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            if(items.size >= rowIndex * 2 + 2) {
-                PokedexItem(
-                    item = items[rowIndex * 2 + 1],
-                    navController = navController,
-                    modifier = Modifier.weight(1f)
-                )
-            } else {
-                Spacer(modifier = Modifier.weight(1f))
-            }
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-    }
-}
 
-
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun PokemonList(
     navController: NavController,
@@ -225,21 +200,26 @@ fun PokemonList(
     val isLoading by remember { viewModel.isLoading }
     val isSearching by remember { viewModel.isSearching }
 
-    LazyColumn(contentPadding = PaddingValues(16.dp)) {
-        val itemCount = if (pokemonList.size % 2 == 0) {
-            pokemonList.size / 2
-        } else {
-            pokemonList.size / 2 + 1
-        }
-        items (itemCount) {
-            // Means scrolled to bottom
-            if (it >= itemCount - 1 && !endReached && !isLoading && !isSearching) {
+    // GridView
+    // https://mjmanaog.medium.com/jetpack-compose-custom-list-such-ez-much-wow-12ff17813747
+    LazyVerticalGrid(
+        cells = GridCells.Fixed(2),
+        contentPadding = PaddingValues(8.dp)
+    ) {
+        items(pokemonList.size) {
+            // Means scrolled to bottom and perform paging
+            if (it >= pokemonList.size - 1 && !endReached && !isLoading && !isSearching) {
                 // For handle possible side effect
                 LaunchedEffect(key1 = true) {
                     viewModel.loadPokemonPaginated()
                 }
             }
-            PokedexRow(rowIndex = it, items = pokemonList, navController = navController)
+            // Set Pokemon Item
+            PokedexItem(
+                item = pokemonList[it],
+                navController = navController,
+                Modifier.padding(8.dp)
+            )
         }
     }
 
@@ -256,7 +236,6 @@ fun PokemonList(
             }
         }
     }
-
 }
 
 
